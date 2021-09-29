@@ -6,6 +6,15 @@ const DECREASE = 'DECREASE';
 export const increase = () => ({ type: INCREASE });
 export const decrease = () => ({ type: DECREASE });
 
+// thunk 함수 만들기
+// getState를 쓰지 않으면 굳이 파라미터로 받아올 필요X
+export const increaseAsync = () => dispatch => {
+    setTimeout(() => dispatch(increase()), 1000);
+}
+export const decreaseAsync = () => dispatch => {
+    setTimeout(() => dispatch(decrease()), 1000);
+}
+
 // 초기값 (상태가 객체가 아니라 그냥 숫자여도 상관X)
 const initialState = 0;
 
