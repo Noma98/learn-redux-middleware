@@ -9,19 +9,30 @@ import rootReducer from './modules';
 import logger from 'redux-logger';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import ReduxThunk from 'redux-thunk';
-import { BrowserRouter } from 'react-router-dom';
+import { Router } from 'react-router-dom';
+import { createBrowserHistory } from 'history';
 
-// 미들웨어 여러개 적용 가능
-// logger는 가장 마지막에 와야함
-const store = createStore(rootReducer, composeWithDevTools(applyMiddleware(ReduxThunk, logger)));
+//thunk에서 라우터의 history 객체를 사용하려면 BrowserHistory 인스턴스를 직접 만들어서 적용해야 한다.
+const customHistory = createBrowserHistory();
+
+// 미들웨어 여러개 적용 가능. logger는 가장 마지막에 와야함
+const store = createStore(
+  rootReducer,
+  composeWithDevTools(
+    applyMiddleware(//redux-thunk의 withExtraArgument를 사용하면 thunk 함수에서 사전에 정해준 값들을 참조할 수 있다.
+      ReduxThunk.withExtraArgument({ history: customHistory }),
+      logger
+    )
+  )
+);
 
 ReactDOM.render(
   <React.StrictMode>
-    <BrowserRouter>
+    <Router history={customHistory}>
       <Provider store={store}>
         <App />
       </Provider>
-    </BrowserRouter>
+    </Router>
   </React.StrictMode>,
   document.getElementById('root')
 );

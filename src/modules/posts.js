@@ -15,6 +15,10 @@ const GET_POST_ERROR = 'GET_POST_ERROR';
 // thunk를 사용할 때, 꼭 모든 액션들에 대해 액션 생성함수를 만들 필요는 없다. thunk 함수에서 바로 액션 객체를 만들어줘도 OK
 export const getPosts = createPromiseThunk(GET_POSTS, postsAPI.getPosts);
 export const getPost = createPromiseThunkById(GET_POST, postsAPI.getPostById);
+//3번째 인자를 사용하면 withExtraArgument에서 넣어준 값들 사용 가능
+export const goToHome = () => (dispatch, getState, { history }) => {
+    history.push('/');
+}
 
 const initialState = {
     posts: reducerUtils.initial(),
