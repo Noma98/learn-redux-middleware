@@ -9,6 +9,7 @@ import rootReducer from './modules';
 import logger from 'redux-logger';
 import { composeWithDevTools } from 'redux-devtools-extension';
 import ReduxThunk from 'redux-thunk';
+import { BrowserRouter } from 'react-router-dom';
 
 // 미들웨어 여러개 적용 가능
 // logger는 가장 마지막에 와야함
@@ -16,9 +17,11 @@ const store = createStore(rootReducer, composeWithDevTools(applyMiddleware(Redux
 
 ReactDOM.render(
   <React.StrictMode>
-    <Provider store={store}>
-      <App />
-    </Provider>
+    <BrowserRouter>
+      <Provider store={store}>
+        <App />
+      </Provider>
+    </BrowserRouter>
   </React.StrictMode>,
   document.getElementById('root')
 );
