@@ -1,5 +1,5 @@
 import * as postsAPI from '../api/posts';
-import { createPromiseThunk, createPromiseThunkById, handleAsyncActions, handleAsyncActionsById, reducerUtils } from '../lib/asyncUtils';
+import { createPromiseSaga, createPromiseSagaById, createPromiseThunk, createPromiseThunkById, handleAsyncActions, handleAsyncActionsById, reducerUtils } from '../lib/asyncUtils';
 import { call, put, takeEvery } from 'redux-saga/effects';
 /* 액션 타입 */
 // 포스트 여러 개 조회
@@ -22,41 +22,9 @@ export const getPosts = () => ({ type: GET_POSTS });
 //handleAsyncActionsById를 호환하기 위해 meta사용하는 것. handleAsyncActionsById를 사용하지 않았다면 meta 생략해도 됨
 export const getPost = id => ({ type: GET_POST, payload: id, meta: id });
 
-function* getPostsSaga() {
-    try {
-        const posts = yield call(postsAPI.getPosts);//call을 사용하면 특정 함수를 호출하고 결과물이 반환될 때까지 기다려 준다.
-        yield put({
-            type: GET_POSTS_SUCCESS,
-            payload: posts
-        });//성공 액션 디스패치
-    } catch (e) {
-        yield put({
-            type: GET_POSTS_ERROR,
-            error: true,
-            payload: e
-        });//실패 액션 디스패치
-    }
-}
-//액션이 지니고 있는 값을 조회하고 싶다면 action 파라미터로 받아와 사용
-function* getPostSaga(action) {
-    const param = action.payload;
-    const id = action.meta;
-    try {
-        const post = yield call(postsAPI.getPostById, param); //API에 넣어주고 싶은 인자는 call 함수의 두번째 인자부터 순서대로 넣어주면 된다.
-        yield put({
-            type: GET_POST_SUCCESS,
-            payload: post,
-            meta: id
-        });
-    } catch (e) {
-        yield put({
-            type: GET_POST_ERROR,
-            error: true,
-            payload: e,
-            meta: id
-        });
-    }
-}
+const getPostsSaga = createPromiseSaga(GET_POSTS, postsAPI.getPosts);
+const getPostSaga = createPromiseSagaById(GET_POST, postsAPI.getPostById);
+
 //사가들 합치기
 export function* postsSaga() {
     yield takeEvery(GET_POSTS, getPostsSaga);

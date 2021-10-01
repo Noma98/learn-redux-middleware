@@ -1,20 +1,50 @@
-// Promise에 기반한 thunk를 만들어 주는 함수
-export const createPromiseThunk = (type, promiseCreator) => {
-    const [SUCCESS, ERROR] = [`${type}_SUCCESS`, `${type}_ERROR`];
+import { call, put } from 'redux-saga/effects';
 
-    return (param) => async dispatch => {
-        // 이 함수는 promiseCreator가 단 하나의 파라미터만 받는다는 전제하에 작성됨
-        // 만약 여러 종류의 파라미터를 전달해야 한다면 객체 타입으로 전달하면 됨
-        dispatch({ type, param });
+// 프로미스를 기다렸다가 결과를 디스패치하는 사가
+export const createPromiseSaga = (type, promiseCreator) => {
+    const [SUCCESS, ERROR] = [`${type}_SUCCESS`, `${type}_ERROR`];
+    return function* saga(action) {
         try {
-            //결과물 이름을 payload로 통일
-            const payload = await promiseCreator(param);
-            dispatch({ type: SUCCESS, payload });
-        } catch (error) {
-            dispatch({ type: ERROR, payload: error, error: true });
+            //재사용성을 위해 promiseCreator의 파라미터에 action.payload 값 설정
+            const payload = yield call(promiseCreator, action.payload);
+            yield put({ type: SUCCESS, payload });
+        } catch (e) {
+            yield put({ type: ERROR, error: true, payload: e });
+        }
+    };
+}
+// 특정 id의 데이터를 조회하는 용도로 사용하는 사가
+// API 호출 시 파라미터는 action.payload를 넣고, id 값을 action.meta로 설정
+export const createPromiseSagaById = (type, promiseCreator) => {
+    const [SUCCESS, ERROR] = [`${type}_SUCCESS`, `${type}_ERROR`];
+    return function* saga(action) {
+        const id = action.meta;
+        try {
+            const payload = yield call(promiseCreator, action.payload);
+            yield put({ type: SUCCESS, payload, meta: id });
+        } catch (e) {
+            yield put({ type: ERROR, error: e, meta: id });
         }
     }
 }
+
+// // Promise에 기반한 thunk를 만들어 주는 함수
+// export const createPromiseThunk = (type, promiseCreator) => {
+//     const [SUCCESS, ERROR] = [`${type}_SUCCESS`, `${type}_ERROR`];
+
+//     return (param) => async dispatch => {
+//         // 이 함수는 promiseCreator가 단 하나의 파라미터만 받는다는 전제하에 작성됨
+//         // 만약 여러 종류의 파라미터를 전달해야 한다면 객체 타입으로 전달하면 됨
+//         dispatch({ type, param });
+//         try {
+//             //결과물 이름을 payload로 통일
+//             const payload = await promiseCreator(param);
+//             dispatch({ type: SUCCESS, payload });
+//         } catch (error) {
+//             dispatch({ type: ERROR, payload: error, error: true });
+//         }
+//     }
+// }
 export const reducerUtils = {
     //초기 상태. 초기 data 값은 기본적으로 null이지만 바꿀 수도 있다.
     initial: (initialData = null) => ({
