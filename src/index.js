@@ -15,7 +15,11 @@ import createSagaMiddleware from '@redux-saga/core';
 
 //thunk에서 라우터의 history 객체를 사용하려면 BrowserHistory 인스턴스를 직접 만들어서 적용해야 한다.
 const customHistory = createBrowserHistory();
-const sagaMiddleware = createSagaMiddleware();
+const sagaMiddleware = createSagaMiddleware({
+  context: {
+    history: customHistory
+  }//미들웨어를 만들 때 context를 설정해주면 추후 사가에서 getContext함수를 통해 조회할 수 있다.
+});
 
 // 미들웨어 여러개 적용 가능. logger는 가장 마지막에 와야함
 const store = createStore(

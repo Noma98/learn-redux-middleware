@@ -1,6 +1,6 @@
 import * as postsAPI from '../api/posts';
-import { createPromiseSaga, createPromiseSagaById, createPromiseThunk, createPromiseThunkById, handleAsyncActions, handleAsyncActionsById, reducerUtils } from '../lib/asyncUtils';
-import { call, put, takeEvery } from 'redux-saga/effects';
+import { createPromiseSaga, createPromiseSagaById, handleAsyncActions, handleAsyncActionsById, reducerUtils } from '../lib/asyncUtils';
+import { takeEvery, getContext } from 'redux-saga/effects';
 /* 액션 타입 */
 // 포스트 여러 개 조회
 const GET_POSTS = 'GET_POSTS'; //요청 시작
@@ -11,6 +11,7 @@ const GET_POSTS_ERROR = 'GET_POSTS_ERROR'; //요청 실패
 const GET_POST = 'GET_POST';
 const GET_POST_SUCCESS = 'GET_POST_SUCCESS';
 const GET_POST_ERROR = 'GET_POST_ERROR';
+const GO_TO_HOME = 'GO_TO_HOME';
 
 // thunk를 사용할 때, 꼭 모든 액션들에 대해 액션 생성함수를 만들 필요는 없다. thunk 함수에서 바로 액션 객체를 만들어줘도 OK
 // export const getPosts = createPromiseThunk(GET_POSTS, postsAPI.getPosts);
@@ -21,20 +22,26 @@ export const getPosts = () => ({ type: GET_POSTS });
 //payload는 파라미터 용도, meta는 리듀서에서 id를 알기위한 용도
 //handleAsyncActionsById를 호환하기 위해 meta사용하는 것. handleAsyncActionsById를 사용하지 않았다면 meta 생략해도 됨
 export const getPost = id => ({ type: GET_POST, payload: id, meta: id });
+export const goToHome = () => ({ type: GO_TO_HOME });
 
 const getPostsSaga = createPromiseSaga(GET_POSTS, postsAPI.getPosts);
 const getPostSaga = createPromiseSagaById(GET_POST, postsAPI.getPostById);
+function* goToHomeSaga() {
+    const history = yield getContext('history');
+    history.push('/');
+}
 
 //사가들 합치기
 export function* postsSaga() {
     yield takeEvery(GET_POSTS, getPostsSaga);
     yield takeEvery(GET_POST, getPostSaga);
+    yield takeEvery(GO_TO_HOME, goToHomeSaga);
 }
 
-//3번째 인자를 사용하면 withExtraArgument에서 넣어준 값들 사용 가능
-export const goToHome = () => (dispatch, getState, { history }) => {
-    history.push('/');
-}
+// //3번째 인자를 사용하면 withExtraArgument에서 넣어준 값들 사용 가능
+// export const goToHome = () => (dispatch, getState, { history }) => {
+//     history.push('/');
+// }
 
 const initialState = {
     posts: reducerUtils.initial(),
