@@ -1,6 +1,6 @@
 import * as postsAPI from '../api/posts';
 import { createPromiseThunk, createPromiseThunkById, handleAsyncActions, handleAsyncActionsById, reducerUtils } from '../lib/asyncUtils';
-
+import { call, put, takeEvery } from 'redux-saga/effects';
 /* 액션 타입 */
 // 포스트 여러 개 조회
 const GET_POSTS = 'GET_POSTS'; //요청 시작
@@ -13,8 +13,56 @@ const GET_POST_SUCCESS = 'GET_POST_SUCCESS';
 const GET_POST_ERROR = 'GET_POST_ERROR';
 
 // thunk를 사용할 때, 꼭 모든 액션들에 대해 액션 생성함수를 만들 필요는 없다. thunk 함수에서 바로 액션 객체를 만들어줘도 OK
-export const getPosts = createPromiseThunk(GET_POSTS, postsAPI.getPosts);
-export const getPost = createPromiseThunkById(GET_POST, postsAPI.getPostById);
+// export const getPosts = createPromiseThunk(GET_POSTS, postsAPI.getPosts);
+// export const getPost = createPromiseThunkById(GET_POST, postsAPI.getPostById);
+
+//redux-saga를 사용하니깐 순수 액션 객체를 반환하는 액션 생성함수로 구현 가능
+export const getPosts = () => ({ type: GET_POSTS });
+//payload는 파라미터 용도, meta는 리듀서에서 id를 알기위한 용도
+//handleAsyncActionsById를 호환하기 위해 meta사용하는 것. handleAsyncActionsById를 사용하지 않았다면 meta 생략해도 됨
+export const getPost = id => ({ type: GET_POST, payload: id, meta: id });
+
+function* getPostsSaga() {
+    try {
+        const posts = yield call(postsAPI.getPosts);//call을 사용하면 특정 함수를 호출하고 결과물이 반환될 때까지 기다려 준다.
+        yield put({
+            type: GET_POSTS_SUCCESS,
+            payload: posts
+        });//성공 액션 디스패치
+    } catch (e) {
+        yield put({
+            type: GET_POSTS_ERROR,
+            error: true,
+            payload: e
+        });//실패 액션 디스패치
+    }
+}
+//액션이 지니고 있는 값을 조회하고 싶다면 action 파라미터로 받아와 사용
+function* getPostSaga(action) {
+    const param = action.payload;
+    const id = action.meta;
+    try {
+        const post = yield call(postsAPI.getPostById, param); //API에 넣어주고 싶은 인자는 call 함수의 두번째 인자부터 순서대로 넣어주면 된다.
+        yield put({
+            type: GET_POST_SUCCESS,
+            payload: post,
+            meta: id
+        });
+    } catch (e) {
+        yield put({
+            type: GET_POST_ERROR,
+            error: true,
+            payload: e,
+            meta: id
+        });
+    }
+}
+//사가들 합치기
+export function* postsSaga() {
+    yield takeEvery(GET_POSTS, getPostsSaga);
+    yield takeEvery(GET_POST, getPostSaga);
+}
+
 //3번째 인자를 사용하면 withExtraArgument에서 넣어준 값들 사용 가능
 export const goToHome = () => (dispatch, getState, { history }) => {
     history.push('/');
@@ -22,7 +70,7 @@ export const goToHome = () => (dispatch, getState, { history }) => {
 
 const initialState = {
     posts: reducerUtils.initial(),
-    post: {}
+    post: reducerUtils.initial()
 };
 
 export default function posts(state = initialState, action) {
